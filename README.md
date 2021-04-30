@@ -11,3 +11,5 @@ Note that additional metadata about PBI artifacts (e.g., a report’s author, in
 
 ### Getting Started
 Please refer to the Word document (PBIMonitoringFramework_V1.docx) for step-by-step details on how to get started.
+
+![StarterReport](/images/PBIActivityUsage.jpg)
