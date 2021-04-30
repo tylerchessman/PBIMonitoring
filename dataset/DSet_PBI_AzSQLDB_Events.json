@@ -1,0 +1,127 @@
+{
+	"name": "DSet_PBI_AzSQLDB_Events",
+	"properties": {
+		"description": "Azure SQL DB dataset to store Activity Events",
+		"linkedServiceName": {
+			"referenceName": "LS_AzDB_PBI_Db",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "PBI"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "IdIdentity",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Id",
+				"type": "nvarchar"
+			},
+			{
+				"name": "RecordType",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "CreationTime",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			},
+			{
+				"name": "Operation",
+				"type": "nvarchar"
+			},
+			{
+				"name": "OrganizationId",
+				"type": "nvarchar"
+			},
+			{
+				"name": "UserType",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "UserKey",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Workload",
+				"type": "nvarchar"
+			},
+			{
+				"name": "UserId",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ClientIP",
+				"type": "nvarchar"
+			},
+			{
+				"name": "UserAgent",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Activity",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ItemName",
+				"type": "nvarchar"
+			},
+			{
+				"name": "WorkspaceName",
+				"type": "nvarchar"
+			},
+			{
+				"name": "DatasetName",
+				"type": "nvarchar"
+			},
+			{
+				"name": "WorkspaceId",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ObjectId",
+				"type": "nvarchar"
+			},
+			{
+				"name": "DatasetId",
+				"type": "nvarchar"
+			},
+			{
+				"name": "DataConnectivityMode",
+				"type": "nvarchar"
+			},
+			{
+				"name": "IsSuccess",
+				"type": "bit"
+			},
+			{
+				"name": "RequestId",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ActivityId",
+				"type": "nvarchar"
+			},
+			{
+				"name": "TableName",
+				"type": "nvarchar"
+			},
+			{
+				"name": "IdJobRun",
+				"type": "int",
+				"precision": 10
+			}
+		],
+		"typeProperties": {
+			"schema": "pbi",
+			"table": "ActivityEvents"
+		}
+	}
+}

@@ -1,0 +1,32 @@
+{
+	"name": "DSet_PBI_REST_MngmtAPI",
+	"properties": {
+		"description": "Connection to the PBI REST API",
+		"linkedServiceName": {
+			"referenceName": "LS_REST_PBISvc",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"startDateTime": {
+				"type": "string",
+				"defaultValue": "2020-04-04T00:00:00"
+			},
+			"endDateTime": {
+				"type": "string",
+				"defaultValue": "2020-04-04T23:59:59"
+			}
+		},
+		"folder": {
+			"name": "PBI"
+		},
+		"annotations": [],
+		"type": "RestResource",
+		"typeProperties": {
+			"relativeUrl": {
+				"value": "@concat('admin/activityevents?startDateTime=' , '''', dataset().startDateTime, '''', '&endDateTime=', '''', dataset().endDateTime, '''')",
+				"type": "Expression"
+			}
+		},
+		"schema": []
+	}
+}

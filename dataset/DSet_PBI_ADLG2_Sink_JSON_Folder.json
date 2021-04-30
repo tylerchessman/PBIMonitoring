@@ -1,0 +1,37 @@
+{
+	"name": "DSet_PBI_ADLG2_Sink_JSON_Folder",
+	"properties": {
+		"description": "Generic JSON Sink for ADLS Gen2",
+		"linkedServiceName": {
+			"referenceName": "LS_ADL2_PBI",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"Container": {
+				"type": "string"
+			},
+			"Directory": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "PBI"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": {
+					"value": "@dataset().Directory",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().Container",
+					"type": "Expression"
+				}
+			}
+		},
+		"schema": {}
+	}
+}

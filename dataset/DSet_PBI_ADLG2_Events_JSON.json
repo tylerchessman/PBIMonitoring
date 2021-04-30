@@ -1,0 +1,136 @@
+{
+	"name": "DSet_PBI_ADLG2_Events_JSON",
+	"properties": {
+		"description": "JSON structured Activity Events from the Power BI REST API",
+		"linkedServiceName": {
+			"referenceName": "LS_ADL2_PBI",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"Container": {
+				"type": "string",
+				"defaultValue": "pbi"
+			},
+			"Directory": {
+				"type": "string",
+				"defaultValue": "_Staging"
+			},
+			"FileName": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "PBI"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().FileName",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().Directory",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().Container",
+					"type": "Expression"
+				}
+			}
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"activityEventEntities": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"Id": {
+								"type": "string"
+							},
+							"RecordType": {
+								"type": "integer"
+							},
+							"CreationTime": {
+								"type": "string"
+							},
+							"Operation": {
+								"type": "string"
+							},
+							"OrganizationId": {
+								"type": "string"
+							},
+							"UserType": {
+								"type": "integer"
+							},
+							"UserKey": {
+								"type": "string"
+							},
+							"Workload": {
+								"type": "string"
+							},
+							"UserId": {
+								"type": "string"
+							},
+							"ClientIP": {
+								"type": "string"
+							},
+							"UserAgent": {
+								"type": "string"
+							},
+							"Activity": {
+								"type": "string"
+							},
+							"ItemName": {
+								"type": "string"
+							},
+							"WorkSpaceName": {
+								"type": "string"
+							},
+							"DatasetName": {
+								"type": "string"
+							},
+							"WorkspaceId": {
+								"type": "string"
+							},
+							"ObjectId": {
+								"type": "string"
+							},
+							"DatasetId": {
+								"type": "string"
+							},
+							"DataConnectivityMode": {
+								"type": "string"
+							},
+							"IsSuccess": {
+								"type": "boolean"
+							},
+							"RequestId": {
+								"type": "string"
+							},
+							"ActivityId": {
+								"type": "string"
+							},
+							"TableName": {
+								"type": "string"
+							}
+						}
+					}
+				},
+				"continuationUri": {
+					"type": "string"
+				},
+				"continuationToken": {
+					"type": "string"
+				},
+				"lastResultSet": {
+					"type": "boolean"
+				}
+			}
+		}
+	}
+}
