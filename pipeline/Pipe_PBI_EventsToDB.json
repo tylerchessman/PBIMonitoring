@@ -1,0 +1,531 @@
+{
+	"name": "Pipe_PBI_EventsToDB",
+	"properties": {
+		"description": "Inserts Activity Events into an Azure SQL DB; archive the files to a Raw zone after they've been processed.",
+		"activities": [
+			{
+				"name": "CopyActEventsToDB",
+				"description": "Copy the Raw Events to Database.",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "GetJobId",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SetJobSourceStart",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"additionalColumns": [
+							{
+								"name": "idJobRun",
+								"value": {
+									"value": "@activity('GetJobId').output.firstRow.Id",
+									"type": "Expression"
+								}
+							}
+						],
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"modifiedDatetimeStart": {
+								"value": "@pipeline().parameters.startDateTime",
+								"type": "Expression"
+							},
+							"modifiedDatetimeEnd": {
+								"value": "@variables('JobSourceStart')",
+								"type": "Expression"
+							},
+							"wildcardFolderPath": {
+								"value": "@pipeline().parameters.StagingDirectory",
+								"type": "Expression"
+							},
+							"wildcardFileName": "*.json",
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"path": "['Id']"
+								},
+								"sink": {
+									"name": "Id",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['RecordType']"
+								},
+								"sink": {
+									"name": "RecordType",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"path": "['CreationTime']"
+								},
+								"sink": {
+									"name": "CreationTime",
+									"type": "DateTime"
+								}
+							},
+							{
+								"source": {
+									"path": "['Operation']"
+								},
+								"sink": {
+									"name": "Operation",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['OrganizationId']"
+								},
+								"sink": {
+									"name": "OrganizationId",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['UserType']"
+								},
+								"sink": {
+									"name": "UserType",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"path": "['UserKey']"
+								},
+								"sink": {
+									"name": "UserKey",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['Workload']"
+								},
+								"sink": {
+									"name": "Workload",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['UserId']"
+								},
+								"sink": {
+									"name": "UserId",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['ClientIP']"
+								},
+								"sink": {
+									"name": "ClientIP",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['UserAgent']"
+								},
+								"sink": {
+									"name": "UserAgent",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['Activity']"
+								},
+								"sink": {
+									"name": "Activity",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['ItemName']"
+								},
+								"sink": {
+									"name": "ItemName",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['WorkSpaceName']"
+								},
+								"sink": {
+									"name": "WorkspaceName",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['DatasetName']"
+								},
+								"sink": {
+									"name": "DatasetName",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['WorkspaceId']"
+								},
+								"sink": {
+									"name": "WorkspaceId",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['ObjectId']"
+								},
+								"sink": {
+									"name": "ObjectId",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['DatasetId']"
+								},
+								"sink": {
+									"name": "DatasetId",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['DataConnectivityMode']"
+								},
+								"sink": {
+									"name": "DataConnectivityMode",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['IsSuccess']"
+								},
+								"sink": {
+									"name": "IsSuccess",
+									"type": "Boolean"
+								}
+							},
+							{
+								"source": {
+									"path": "['RequestId']"
+								},
+								"sink": {
+									"name": "RequestId",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['ActivityId']"
+								},
+								"sink": {
+									"name": "ActivityId",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "['TableName']"
+								},
+								"sink": {
+									"name": "TableName",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "$['idJobRun']"
+								},
+								"sink": {
+									"name": "IdJobRun",
+									"type": "Int32"
+								}
+							}
+						],
+						"collectionReference": "$['activityEventEntities']",
+						"mapComplexValuesToString": true
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "DSet_PBI_ADLG2_Events_JSON",
+						"type": "DatasetReference",
+						"parameters": {
+							"Container": {
+								"value": "@pipeline().parameters.Container",
+								"type": "Expression"
+							},
+							"Directory": "_Staging",
+							"FileName": "NA"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DSet_PBI_AzSQLDB_Events",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "GetJobId",
+				"description": "Get an integer representation of PipelineId run - so we can insert into the database rows",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderStoredProcedureName": "[pbi].[RunId_I]",
+						"storedProcedureParameters": {
+							"RunId": {
+								"type": "Guid",
+								"value": {
+									"value": "@pipeline().RunId",
+									"type": "Expression"
+								}
+							}
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DSet_PBI_AzSQLDB_Events",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "ArchiveFilesToRaw",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "CopyActEventsToDB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"modifiedDatetimeStart": {
+								"value": "@pipeline().parameters.startDateTime",
+								"type": "Expression"
+							},
+							"modifiedDatetimeEnd": {
+								"value": "@variables('JobSourceStart')",
+								"type": "Expression"
+							},
+							"wildcardFolderPath": {
+								"value": "@pipeline().parameters.StagingDirectory",
+								"type": "Expression"
+							},
+							"wildcardFileName": "*.json",
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"sink": {
+						"type": "JsonSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "JsonWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "DSet_PBI_ADLG2_Sink_JSON_Folder",
+						"type": "DatasetReference",
+						"parameters": {
+							"Container": {
+								"value": "@pipeline().parameters.Container",
+								"type": "Expression"
+							},
+							"Directory": "NA"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DSet_PBI_ADLG2_Sink_JSON_Folder",
+						"type": "DatasetReference",
+						"parameters": {
+							"Container": {
+								"value": "@pipeline().parameters.Container",
+								"type": "Expression"
+							},
+							"Directory": {
+								"value": "@pipeline().parameters.rawDirectory",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "DeleteFilesFromStage",
+				"type": "Delete",
+				"dependsOn": [
+					{
+						"activity": "ArchiveFilesToRaw",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DSet_PBI_ADLG2_Sink_JSON_Folder",
+						"type": "DatasetReference",
+						"parameters": {
+							"Container": {
+								"value": "@pipeline().parameters.Container",
+								"type": "Expression"
+							},
+							"Directory": {
+								"value": "@pipeline().parameters.StagingDirectory",
+								"type": "Expression"
+							}
+						}
+					},
+					"enableLogging": false,
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"modifiedDatetimeStart": {
+							"value": "@pipeline().parameters.startDateTime",
+							"type": "Expression"
+						},
+						"modifiedDatetimeEnd": {
+							"value": "@variables('JobSourceStart')",
+							"type": "Expression"
+						},
+						"wildcardFileName": "*.json",
+						"enablePartitionDiscovery": false
+					}
+				}
+			},
+			{
+				"name": "SetJobSourceStart",
+				"description": "StartTime",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "JobSourceStart",
+					"value": {
+						"value": "@utcnow('yyyy-MM-ddTHH:mm:ss.fff')",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"startDateTime": {
+				"type": "string",
+				"defaultValue": "2020-01-01T00:00:00"
+			},
+			"Container": {
+				"type": "string",
+				"defaultValue": "pbi"
+			},
+			"StagingDirectory": {
+				"type": "string",
+				"defaultValue": "_Staging"
+			},
+			"rawDirectory": {
+				"type": "string",
+				"defaultValue": "RawTemp"
+			}
+		},
+		"variables": {
+			"JobSourceStart": {
+				"type": "String",
+				"defaultValue": "2030-12-31T23:59:59"
+			}
+		},
+		"folder": {
+			"name": "PBI"
+		},
+		"annotations": []
+	}
+}

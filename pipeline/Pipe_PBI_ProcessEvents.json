@@ -1,0 +1,148 @@
+{
+	"name": "Pipe_PBI_ProcessEvents",
+	"properties": {
+		"description": "Uses a watermark table to incrementally retrieve PBI activity events, land them in Azure Storage, and then load to an Azure SQL Database.",
+		"activities": [
+			{
+				"name": "ForEachJobSource",
+				"description": "Look through each watermark row- and load/process the data.",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GetSetWatermark",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GetSetWatermark').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "PBI_ActEvents_ToStage",
+							"description": "Load Activity Event to Azure Storage",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "Pipe_PBI_EventsToStage",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"SinkContainer": {
+										"value": "@{item().SinkContainer}",
+										"type": "Expression"
+									},
+									"SinkDirectory": {
+										"value": "@{item().SinkDirectory}",
+										"type": "Expression"
+									},
+									"startDateTime": {
+										"value": "@{item().SourceWatermark}",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "PBI_ActEvents_ToDB",
+							"description": "Load Activity Events into Database",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "PBI_ActEvents_ToStage",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "Pipe_PBI_EventsToDB",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"startDateTime": {
+										"value": "@{item().SourceWatermark}",
+										"type": "Expression"
+									},
+									"Container": {
+										"value": "@{item().SinkContainer}",
+										"type": "Expression"
+									},
+									"StagingDirectory": {
+										"value": "@{item().SinkDirectory}",
+										"type": "Expression"
+									},
+									"rawDirectory": "RawTemp"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "GetSetWatermark",
+				"description": "Retrieve the last load time from the PBI Service. ",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:00:59",
+					"retry": 1,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderStoredProcedureName": "[pbi].[Watermark_S]",
+						"storedProcedureParameters": {
+							"flCheckTable": {
+								"type": "Boolean",
+								"value": {
+									"value": "@bool(1)",
+									"type": "Expression"
+								}
+							},
+							"IdSource": {
+								"type": "Int32",
+								"value": "1"
+							}
+						},
+						"queryTimeout": "00:01:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DSet_PBI_AzSQLDB_Events",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			}
+		],
+		"variables": {
+			"JobSourceStart": {
+				"type": "String"
+			},
+			"IdJobRunRaw": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "PBI"
+		},
+		"annotations": []
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

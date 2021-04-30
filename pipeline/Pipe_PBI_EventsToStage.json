@@ -1,0 +1,307 @@
+{
+	"name": "Pipe_PBI_EventsToStage",
+	"properties": {
+		"description": "Retrieve and store PBI Activities Events into Azure Storage.",
+		"activities": [
+			{
+				"name": "GetBearerToken",
+				"description": "Web activity to retrieve bearer token (passed into Copy Activity)\nhttps://docs.microsoft.com/en-us/power-bi/developer/embedded/register-app.",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "WebGetCredsFromKV",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "AppUserName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SetJobSourceStart",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": true,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": {
+						"value": "@pipeline().parameters.BearerTokenURL",
+						"type": "Expression"
+					},
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"body": {
+						"value": "@concat('grant_type=password&client_id=', pipeline().parameters.AppClientId, '&resource=https://analysis.windows.net/powerbi/api&username=', variables('AppUserName'), '&password=', activity('WebGetCredsFromKV').output.value )",
+						"type": "Expression"
+					},
+					"linkedServices": [
+						{
+							"referenceName": "LS_REST_PBISvc",
+							"type": "LinkedServiceReference"
+						}
+					]
+				}
+			},
+			{
+				"name": "GetActivityDateRanges",
+				"description": "PBI ActivityEvents can be called for 1-day maximum; need to generate a list of dates between the supplied start and end date.",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:00:08",
+					"retry": 1,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderStoredProcedureName": "[pbi].[GetActivityEventDates]",
+						"storedProcedureParameters": {
+							"EndDateTime": {
+								"type": "DateTime",
+								"value": {
+									"value": "@variables('JobSourceStart')",
+									"type": "Expression"
+								}
+							},
+							"StartDateTime": {
+								"type": "DateTime",
+								"value": {
+									"value": "@pipeline().parameters.startDateTime",
+									"type": "Expression"
+								}
+							}
+						},
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DSet_PBI_AzSQLDB_Events",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEachDate",
+				"description": "Loop through each Day and call the Rest API",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GetActivityDateRanges",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "GetBearerToken",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GetActivityDateRanges').output.value",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"batchCount": 3,
+					"activities": [
+						{
+							"name": "CopyActivityEvent_ToStage",
+							"description": "Copy Activity Events from RestAPI to Stage",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "RestSource",
+									"httpRequestTimeout": "00:01:40",
+									"requestInterval": "00.00:00:00.010",
+									"requestMethod": "GET",
+									"additionalHeaders": {
+										"Authorization": {
+											"value": "@concat('Bearer ',activity('GetBearerToken').output.access_token)",
+											"type": "Expression"
+										}
+									},
+									"paginationRules": {
+										"AbsoluteUrl": "$.continuationUri"
+									}
+								},
+								"sink": {
+									"type": "JsonSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "JsonWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DSet_PBI_REST_MngmtAPI",
+									"type": "DatasetReference",
+									"parameters": {
+										"startDateTime": {
+											"value": "@{item().startDateTime}",
+											"type": "Expression"
+										},
+										"endDateTime": {
+											"value": "@{item().endDateTime}",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DSet_PBI_ADLG2_Events_JSON",
+									"type": "DatasetReference",
+									"parameters": {
+										"Container": {
+											"value": "@pipeline().parameters.SinkContainer",
+											"type": "Expression"
+										},
+										"Directory": {
+											"value": "@concat(pipeline().parameters.SinkDirectory, '/', formatDateTime(item().startDateTime, 'yyyy'), '/', formatDateTime(item().startDateTime, 'MM') )",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@concat('PBIActEvents_', item().startDateTime, '_', item().endDateTime, '.json')",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "WebGetCredsFromKV",
+				"description": "Get the Auth Pwd needed for PBI Bearer token request.  (Optional - can also use KeyVault to store UserName)",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": true,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": {
+						"value": "@pipeline().parameters.KeyVaultURL",
+						"type": "Expression"
+					},
+					"method": "GET",
+					"authentication": {
+						"type": "MSI",
+						"resource": "https://vault.azure.net"
+					}
+				}
+			},
+			{
+				"name": "AppUserName",
+				"description": "Replace with Azure Key Vault if you don't want the UserName to come from a parameter.",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "AppUserName",
+					"value": {
+						"value": "@pipeline().parameters.AppUserNameVal",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SetJobSourceStart",
+				"description": "StartTime",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "JobSourceStart",
+					"value": {
+						"value": "@utcnow('yyyy-MM-ddTHH:mm:ss.fff')",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"SinkContainer": {
+				"type": "string",
+				"defaultValue": "pbi"
+			},
+			"SinkDirectory": {
+				"type": "string",
+				"defaultValue": "_Staging"
+			},
+			"startDateTime": {
+				"type": "string",
+				"defaultValue": "2020-04-12T00:00:00"
+			},
+			"AppClientId": {
+				"type": "string",
+				"defaultValue": "a....5-3c17-4060-8961-3......f"
+			},
+			"AppUserNameVal": {
+				"type": "string",
+				"defaultValue": "someuser@somedomain.com"
+			},
+			"KeyVaultURL": {
+				"type": "string",
+				"defaultValue": "https://somekeyvault.vault.azure.net/secrets/secretPBIAuthPwd/.....?api-version=7.0"
+			},
+			"BearerTokenURL": {
+				"type": "string",
+				"defaultValue": "https://login.microsoftonline.com/someTenantName.onmicrosoft.com/oauth2/token"
+			}
+		},
+		"variables": {
+			"AppUserName": {
+				"type": "String",
+				"defaultValue": "someuser@somedomain.com"
+			},
+			"JobSourceStart": {
+				"type": "String",
+				"defaultValue": "2020-04-14T23:59:59"
+			}
+		},
+		"folder": {
+			"name": "PBI"
+		},
+		"annotations": []
+	}
+}
