@@ -1,0 +1,13 @@
+{
+	"name": "LS_REST_PBISvc",
+	"properties": {
+		"description": "Power BI REST APIs (e.g., https://api.powerbi.com/v1.0/myorg/admin/activityevents).  Authentication will be set at run-time using a bearer token in the header.",
+		"annotations": [],
+		"type": "RestService",
+		"typeProperties": {
+			"url": "https://api.powerbi.com/v1.0/myorg/",
+			"enableServerCertificateValidation": true,
+			"authenticationType": "Anonymous"
+		}
+	}
+}

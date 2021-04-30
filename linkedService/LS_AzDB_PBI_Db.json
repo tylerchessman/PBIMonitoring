@@ -1,0 +1,22 @@
+{
+	"name": "LS_AzDB_PBI_Db",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"description": "Azure SQL DB to store transformed Power BI REST data ",
+		"parameters": {
+			"DBServerName": {
+				"type": "string",
+				"defaultValue": "yourdatabaseserver.database.windows.net"
+			},
+			"DBDatabaseName": {
+				"type": "string",
+				"defaultValue": "yourdatabasename"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"connectionString": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=@{linkedService().DBServerName};Initial Catalog=@{linkedService().DBDatabaseName}"
+		}
+	}
+}
